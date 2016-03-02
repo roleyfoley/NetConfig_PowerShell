@@ -1,4 +1,5 @@
 # PowerShellGatewayFinder
+Find your gateway IP 
 
 Finds the Gateway IP for a network where either the last or first host IP in the network is used as the Gateway IP. 
 
