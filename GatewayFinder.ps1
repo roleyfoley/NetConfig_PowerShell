@@ -9,10 +9,19 @@ Param
 (
     [Parameter(Mandatory=$true)][string]$GWLocation,
     [Parameter(Mandatory=$true)][string]$Route,
-    [Parameter(Mandatory=$true)][string]$Environment
+    [Parameter(Mandatory=$true)][string]$AppEnvironment
 )
 
 $GWLocation = $GWLocation.ToLower()
+
+switch ($AppEnvironment) { 
+    "Devlopment" {
+        }
+    "Preproduction" {
+        }
+    "Production" {
+        } 
+} 
 
 switch ($GWLocation) {
     "first" { 
