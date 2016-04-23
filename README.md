@@ -1,6 +1,8 @@
-# PowerShellGatewayFinder
-Find your gateway IP 
+# Introduction
 
-Finds the Gateway IP for a network where either the last or first host IP in the network is used as the Gateway IP. 
+PowerShell_NetConfig contains a bunch of PowerShell scripts to perform changes or find out about network configuration. 
+It has a few different folders that contain scripts for different functions
 
-Adaptor used is the first one to reply 
+* General - General networking components that can be used in multiple occaisions - Get Gateway Id, IP Validation Etc. 
+* AWS - Scripts to look after an AWS VPC based Network - Peering, Security Groups, Network listing, etc.
+* Windows - Information about OS level Network configuration - Interfaces, IP Address, Route tables 
