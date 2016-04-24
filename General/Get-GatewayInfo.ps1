@@ -68,6 +68,3 @@ $GatewayDetails | Add-Member -MemberType NoteProperty -Name Gateway -Value $(([S
 
 return $GatewayDetails
 }
-
-
-Get-GatewayAddress -IPCidr 10.1.2.4/9 -GWLocation last
