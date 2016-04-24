@@ -1,9 +1,9 @@
-# Gateway Locator and Router adder 
-# In our network configuration either the first or last usable host address is used as the Gateway IP. 
+# Gateway Locator 
+# In most networks either the first or last usable host address in a network is used as the Gateway IP. 
 # This script will calculate what the gateway would be based on the IP configuration of the local server
 # 
 # Written by: mf2201 - 23/04/2016
-
+function Get-GatewayAddress {
 Param 
 (
 	[Parameter(Mandatory=$true)][string]$IPCidr,
@@ -57,3 +57,7 @@ $GatewayDetails | Add-Member -MemberType NoteProperty -Name CidrMask -Value $Cid
 $GatewayDetails | Add-Member -MemberType NoteProperty -Name Gateway -Value $(([System.Net.IPAddress]"$([System.Convert]::ToInt64($NetworkId,2))").IPAddressToString)
 
 return $GatewayDetails
+
+}
+
+Get-GatewayAddress -IPCidr 172.16.1.1/26 -GWLocation first 
