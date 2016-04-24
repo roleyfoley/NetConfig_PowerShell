@@ -1,8 +1,7 @@
 # Gateway Locator 
 # In most networks either the first or last usable host address in a network is used as the Gateway IP. 
-# This script will calculate what the gateway would be based on the IP configuration of the local server
+# This script will calculate what the gateway would be based on a given IP in CIDR format
 # 
-# Written by: mf2201 - 23/04/2016
 function Get-GatewayAddress {
 Param 
 (
@@ -50,14 +49,25 @@ if ($NetworkId.Length -eq 31) {
     $NetworkId = [string]$NetworkId + $BinaryEnd
 }
 
+# Tell me the Subnet Mask
+$SubnetMask = ""
+While ($SubnetMask.Length -le ([int]$CidrMask-1) ) {
+    $SubnetMask = [String]$SubnetMask + 1 
+} 
+
+While ($SubnetMask.Length -le 31 ) {
+    $SubnetMask = [string]$SubnetMask + 0
+}
+
 # Convert the Binary IP back into Dotted Quad 
 $GatewayDetails = New-Object psobject
 $GatewayDetails | Add-Member -MemberType NoteProperty -Name IP -Value $IPAddress
 $GatewayDetails | Add-Member -MemberType NoteProperty -Name CidrMask -Value $CidrMask
+$GatewayDetails | Add-Member -MemberType NoteProperty -Name SubnetMask -Value  $(([System.Net.IPAddress]"$([System.Convert]::ToInt64($SubnetMask,2))").IPAddressToString) 
 $GatewayDetails | Add-Member -MemberType NoteProperty -Name Gateway -Value $(([System.Net.IPAddress]"$([System.Convert]::ToInt64($NetworkId,2))").IPAddressToString)
 
 return $GatewayDetails
-
 }
 
-Get-GatewayAddress -IPCidr 172.16.1.1/26 -GWLocation first 
+
+Get-GatewayAddress -IPCidr 10.1.2.4/9 -GWLocation last
