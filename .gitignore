@@ -169,7 +169,7 @@ App_Data/*.ldf
 ############
 # Visual Code
 ############
-.vscode
+.vscode/
 
 #############
 ## Windows detritus
