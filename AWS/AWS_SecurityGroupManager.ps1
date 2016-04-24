@@ -1,8 +1,7 @@
 Param (
-	[string]$AccountPath,
-	[string]$TemplateGroupPath
+	[string]$AccountPath='.\AWSKeys.csv',
+	[string]$TemplateGroupPath='.\AWSSecGroups.csv'
 )
-
 
 # Environement Setup
 import-module AWSPowerShell
@@ -13,57 +12,58 @@ Set-AWSCredentials -AccessKey "abc123" -SecretKey "abc123" -StoreAs "Credential_
 Initialize-AWSDefaults -ProfileName "Credential_Dummy" -Region "ap-southeast-2"
 
 # Load up the Account Details CSV File
-$AccountCSV = Import-Csv -Path '.\AWSKeys.csv' -ErrorAction Stop
+[System.Collections.ArrayList]$AccountCSV = Import-Csv -Path $AccountPath -ErrorAction Stop
 
 # Load up the Security rules CSV File 
-$TemplateCSV = import-csv -Path '.\AWSSecGroups.csv' -ErrorAction Stop
+$TemplateCSV = import-csv -Path $TemplateGroupPath -ErrorAction Stop
 
-# Get all of our VPC's 
-$AWSVPCList = @()
+function Get-VPCDetails {
+	Param (
+		[System.Collections.ArrayList]$AccountDetails
+	)
+	#Create account credentials and get the VPC ID for each account 
+	foreach ( $AWSAccount in $AccountDetails) { 
+		# Create Auth Profile
+		Set-AWSCredentials -AccessKey $AWSAccount.AccessKey -SecretKey $AWSAccount.SecretKey -StoreAs "Credential_$($AWSAccount.Agency)-$($AWSAccount.Environment)"
+		Initialize-AWSDefaults -ProfileName "Credential_$($AWSAccount.Agency)-$($AWSAccount.Environment)" 
+		
+		$AWSVpcId = $(Get-EC2Vpc -Filters @( @{name='tag:Environment'; values=$($AWSAccount.Environment)}; @{name='tag:Agency'; values=$($AWSAccount.Agency)}; )).VpcId
+		
+		if ( $AWSVpcId -eq $null ) { 
+		Write-Error "Couldn't find a VPC that matched $($AWSAccount.Environment) - $($AWSAccount.Agency) using the provided keys" -ErrorAction Stop
+		} 
 
-#Create account credentials and get the VPC ID for each account 
-foreach ( $AWSAccount in $AccountCSV) { 
-	Set-AWSCredentials -AccessKey $AWSAccount.AccessKey -SecretKey $AWSAccount.SecretKey -StoreAs "Credential_$($AWSAccount.Agency)-$($AWSAccount.Environment)"
-
-	Initialize-AWSDefaults -ProfileName "Credential_$($AWSAccount.Agency)-$($AWSAccount.Environment)" 
-
-	$AWSVPCId = Get-EC2Vpc -Filters @( @{name='tag:Environment'; values=$($AWSAccount.Environment)}; @{name='tag:Agency'; values=$($AWSAccount.Agency)}; ) | Select VpcId
+		$AWSAccount | Add-Member -MemberType NoteProperty -Name VpcId -Value $AWSVpcId
+		$AWSAccount | Add-Member -MemberType NoteProperty -Name AccountId -Value  $((((Get-IAMUser -ProfileName "Credential_$($AWSAccount.Agency)-$($AWSAccount.Environment)").Arn).TrimStart('arn:aws:iam::')).Split(':')[0])	
+}
 	
-	if ( !$AWSVPCId) { 
-    Write-Error "Couldn't find a VPC that matched $($AWSAccount.Environment) - $($AWSAccount.Agency) using the provided keys" -ErrorAction Stop
-	} 
-
-	$VPCInfo = New-Object -TypeName PSObject
-	$VPCInfo | Add-Member -MemberType NoteProperty -Name VPCId -Value $AWSVPCId.VpcId
-	$VPCInfo | Add-Member -MemberType NoteProperty -Name Agency -Value $AWSAccount.Agency
-	$VPCInfo | Add-Member -MemberType NoteProperty -Name Environment -Value $AWSAccount.Environment 
-
-	$AWSVPCList += $VPCInfo
+	return $AccountDetails
 }
 
-# Reset Default profile to Dummy to prevent accidental updates
-Initialize-AWSDefaults -ProfileName "Credential_Dummy" 
 
 function Get-SecurityGroups {
-	param ( [string]$Agency, [string]$Environment, [string]$VPCId )
-	$VPCSecGroups = @()
-	$SecGroups = Get-EC2SecurityGroup -ProfileName "Credential_$($Agency)-$($Environment)" | Where-Object {$_.VpcId -eq "$($VPCId)" } 
+	param ( [string]$Agency, [string]$Environment, [string]$VpcId )
+	$VPCSecGroups = New-Object System.Collections.ArrayList
+	$SecGroups = Get-EC2SecurityGroup -ProfileName "Credential_$($Agency)-$($Environment)" -Filter @( @{name="vpc-id"; value=$VpcId }; )
 		Foreach ($SecGroup in $SecGroups) {
 		$SecGroupInfo = New-Object -TypeName psobject
 		$SecGroupInfo | Add-Member -MemberType NoteProperty -Name Name -Value $SecGroup.GroupName
 		$SecGroupInfo | Add-Member -MemberType NoteProperty -Name GroupId -Value $SecGroup.GroupId
 		$SecGroupInfo | Add-Member -MemberType NoteProperty -Name Agency -Value $AWSVPC.Agency
 		$SecGroupInfo | Add-Member -MemberType NoteProperty -Name Environment -Value $AWSVPC.Environment
-		$VPCSecGroups += $SecGroupInfo
+		[void]$VPCSecGroups.Add($SecGroupInfo)
 		}
 	return $VPCSecGroups
 }
 
+# Get Account Details
+$VPCDetails = Get-VPCDetails -AccountDetails $AccountCSV
+
 # Get all the Security Groups and add to a table
 $SecGroupList = @()
 
-foreach ( $AWSVPC in $AWSVPCList ) {
-		$VPCGroupList = Get-SecurityGroups -Agency $($AWSVPC.Agency) -Environment $($AWSVPC.Environment) -VPCId $($AWSVPC.VPCId)
+foreach ( $AWSVPC in $VPCDetails ) {
+		$VPCGroupList = Get-SecurityGroups -Agency $($AWSVPC.Agency) -Environment $($AWSVPC.Environment) -VpcId $($AWSVPC.VpcId)
 		$SecGroupList = $SecGroupList + $VPCGroupList
 }
 
@@ -72,7 +72,7 @@ foreach ( $AWSVPC in $AWSVPCList ) {
 $TemplateSecGroups = $TemplateCSV | Select GroupName,Description | get-unique -asstring 
 
 # Compare the template security groups to the Destination Groups and create if it doesn't exist
-foreach ($VPC in $AWSVPCList) {
+foreach ($VPC in $VPCDetails) {
 	ForEach ($TemplateGroup in $TemplateSecGroups ) {
        $TemplateGroupName = $VPC.Environment + "_" + $TemplateGroup.GroupName  
        if ( ($SecGroupList | Where-Object {$_.Agency -eq $VPC.Agency -and $_.Environment -eq $VPC.Environment}).Name -notcontains $TemplateGroupName ) {
@@ -86,12 +86,12 @@ foreach ($VPC in $AWSVPCList) {
 Remove-Variable SecGroupList
 $SecGroupList = @()
 
-foreach ( $AWSVPC in $AWSVPCList ) {
-		$VPCSecGroupList = Get-SecurityGroups -Agency $($AWSVPC.Agency) -Environment $($AWSVPC.Environment) -VPCId $($AWSVPC.VPCId)
+foreach ( $AWSVPC in $VPCDetails ) {
+		$VPCSecGroupList = Get-SecurityGroups -Agency $($AWSVPC.Agency) -Environment $($AWSVPC.Environment) -VpcId $($AWSVPC.VpcId)
 		$SecGroupList = $SecGroupList + $VPCSecGroupList
 }
 
-ForEach ( $AWSVPC in $AWSVPCList ) {
+ForEach ( $AWSVPC in $VPCDetails ) {
 	Write-host "Updating Security Groups for $($AWSVPC.Agency) - $($AWSVPC.Environment)" -ForegroundColor Green
 	Initialize-AWSDefaults -ProfileName "Credential_$($AWSVPC.Agency)-$($AWSVPC.Environment)"  
 	ForEach ( $TemplateACL in $TemplateCSV ) {
