@@ -1,4 +1,5 @@
 # Gateway Locator 
+
 # In most networks either the first or last usable host address in a network is used as the Gateway IP. 
 # This script will calculate what the gateway would be based on a given IP in CIDR format
 # 
@@ -6,11 +7,20 @@ function Get-GatewayAddress {
 Param 
 (
 	[Parameter(Mandatory=$true)][string]$IPCidr,
-    [Parameter(Mandatory=$true)][string]$GWLocation
+    [Parameter(ParameterSetName='First')][switch]$First,
+    [Parameter(ParameterSetName='Last')][switch]$Last
 )
 
-$GWLocation = $GWLocation.ToLower()
+# Set Gateway parameter with Switch 
+if ( $First -eq $true ) {
+    $GWLocation = "first"
+}
 
+if  ( $Last -eq $true) {
+    $GWLocation = "last"
+}
+
+# et hte Gateway locatation 
 switch ($GWLocation) {
     "first" { 
         $BinaryFill = "0" 
@@ -20,6 +30,9 @@ switch ($GWLocation) {
         $BinaryFill = "1"
         $BinaryEnd = "0"
      } 
+     default {
+         write-error "Please Specify the Gateway Location - -First or -Last " -ErrorAction Stop
+     }
 }       
 
 # Split IP into IP and Mask
@@ -68,3 +81,6 @@ $GatewayDetails | Add-Member -MemberType NoteProperty -Name Gateway -Value $(([S
 
 return $GatewayDetails
 }
+
+
+Get-GatewayAddress -
