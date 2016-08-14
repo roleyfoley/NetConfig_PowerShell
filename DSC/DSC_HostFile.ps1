@@ -35,8 +35,7 @@ Configuration SpazHome_NetConfig_BasicSetup
       xNetConnectionProfile Pub_IntProfile {
           InterfaceAlias = $Node.PubIntAlias
           NetworkCategory = 'Public'
-          IPv4Connectivity = 'Internet'
-          IPv6Connectivity = 'Disconnected'
+          IPv4Connectivity = 'LocalNetwork'
       }
       
       xFirewall Permit_IIS {
@@ -46,10 +45,11 @@ Configuration SpazHome_NetConfig_BasicSetup
           DependsOn = '[WindowsFeature]Add_IIS'
       }
       
+      
 
       # Feature Installaion
       WindowsFeature Add_IIS {
-          Name = "WebServer"
+          Name = "Web-Server"
           Ensure = 'Present'
       }
       
