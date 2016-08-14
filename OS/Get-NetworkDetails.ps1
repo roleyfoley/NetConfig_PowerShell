@@ -27,3 +27,7 @@ function Get-StaticRouteTable {
    $StaticRoutes =  get-NetRoute -Protocol NetMgmt -AddressFamily IPv4 
    return $StaticRoutes
 }
+
+
+Get-InterfaceIPs
+Get-StaticRouteTable

@@ -81,6 +81,3 @@ $GatewayDetails | Add-Member -MemberType NoteProperty -Name Gateway -Value $(([S
 
 return $GatewayDetails
 }
-
-
-Get-GatewayAddress -
