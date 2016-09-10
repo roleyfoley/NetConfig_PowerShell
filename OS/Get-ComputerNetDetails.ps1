@@ -2,6 +2,7 @@
 
 # Gets all of the Up interfaces and returns any IP addresses that were assigned to them via Staic or DHCP configuration 
 function Get-InterfaceIPs {
+    [CmdletBinding()]
         $InterfaceDetails = New-Object System.Collections.ArrayList
         $Adapters = Get-NetAdapter -Physical | Where-Object { $_.Status -eq "Up" }
         foreach ( $Adapter in $Adapters ) {
@@ -24,6 +25,7 @@ function Get-InterfaceIPs {
 
 # Get the Ipv4 Based Static Route table - Filters out the Local network routing
 function Get-StaticRouteTable {
+    [CmdletBinding()]
    $StaticRoutes =  get-NetRoute -Protocol NetMgmt -AddressFamily IPv4 
    return $StaticRoutes
 }
