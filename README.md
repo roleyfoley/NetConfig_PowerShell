@@ -8,11 +8,18 @@ Running Get-BasicNetworking against an IP in CIDR format will give you subnet ma
 PS C:\Users\mf2201_a> Get-NetworkDetails -IPCidr 10.1.1.1/24
 
 IP            : 10.1.1.1
+
 CidrMask      : 24
+
 SubnetMask    : 255.255.255.0
+
 NetworkId     : 10.1.1.0
+
 FirstIP       : 10.1.1.1
+
 LastIP        : 10.1.1.254
+
 NetworkBinary : 00001010000000010000000100000000
+
 HostBinary    : 00001010000000010000000100000001
 
