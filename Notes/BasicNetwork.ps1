@@ -1,5 +1,3 @@
-# Enable File and Print Sharing via PS 
-Get-netFirewallRule -DisaplyGroup @( 'File and Printer Sharing', 'Windows Remote Management' ) | Enable-NetFirewallRule 
-
-# Change Net Connection Profile - Might not be required if use the firewall stuff. 
-Get-NetAdapter | Set-NetConnectionProfile -NetworkCategory Private 
+# Enable some of the Basics so that you can get to the box and it can do DNS....
+Get-netFirewallRule -DisplayGroup @( 'File and Printer Sharing', 'Windows Remote Management' ) | Enable-NetFirewallRule 
+Get-netFirewallRule -Name CoreNet-DNS-Out-UDP | Enable-netFirewallRule
