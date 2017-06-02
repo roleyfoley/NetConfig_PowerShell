@@ -5,6 +5,9 @@ Get-netFirewallRule -DisplayGroup @( 'File and Printer Sharing', 'Windows Remote
 Get-netFirewallRule -Name CoreNet-DNS-Out-UDP | Enable-netFirewallRule
 ```
 
+# MS Doco
+SkillPipe.com
+
 # Versioning 
  http://semver.org
 
