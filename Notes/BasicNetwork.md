@@ -12,3 +12,5 @@ Get-netFirewallRule -Name CoreNet-DNS-Out-UDP | Enable-netFirewallRule
 * Major - Changing something will break/modify an API
 * Minor - Add something but don't break/remove anything
 * Patch - Fixes that don't break/remove anything
+ 
+ 
